@@ -1,0 +1,163 @@
+<%- include('../partials/head', { title: 'Track Order' }) %>
+<%- include('../partials/navbar') %>
+
+<div class="bg-background min-h-screen pb-32">
+  <main class="pt-24 pb-8 px-5 md:px-10 max-w-2xl mx-auto">
+
+    <div class="mb-6 flex items-center gap-3">
+      <a href="/orders" class="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center hover:bg-surface-container transition-colors">
+        <span class="material-symbols-outlined text-secondary">arrow_back</span>
+      </a>
+      <div>
+        <h1 class="font-extrabold text-2xl text-on-surface tracking-tight">Track Order</h1>
+        <p class="text-secondary text-xs mt-0.5" id="order-id-label">Loading...</p>
+      </div>
+    </div>
+
+    <!-- Status card -->
+    <div class="glass-card rounded-3xl p-6 mb-5">
+      <div id="status-loading" class="space-y-4">
+        <div class="h-8 shimmer rounded-full w-1/2"></div>
+        <div class="h-4 shimmer rounded-full w-2/3"></div>
+      </div>
+      <div id="status-display" class="hidden">
+        <div class="flex items-center gap-4 mb-6">
+          <div id="status-icon-wrap" class="w-16 h-16 rounded-2xl flex items-center justify-center">
+            <span id="status-icon" class="material-symbols-outlined text-3xl"></span>
+          </div>
+          <div>
+            <p class="font-bold text-2xl text-on-surface" id="status-text">—</p>
+            <p class="text-secondary text-sm" id="status-sub">—</p>
+          </div>
+        </div>
+
+        <!-- Progress steps -->
+        <div class="relative">
+          <div class="absolute left-5 top-5 bottom-5 w-0.5 bg-outline-variant/30" id="progress-line"></div>
+          <div id="progress-steps" class="space-y-4 relative"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Order details -->
+    <div class="glass-card rounded-3xl p-6 mb-5 hidden" id="order-details-card">
+      <h2 class="font-bold text-base text-on-surface mb-4 flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary">receipt_long</span>
+        Order Details
+      </h2>
+      <div id="order-items-list" class="space-y-2 mb-4"></div>
+      <div class="border-t border-outline-variant/20 pt-4 flex justify-between font-bold text-on-surface">
+        <span>Total Paid</span>
+        <span id="order-total" class="text-primary">₹0</span>
+      </div>
+    </div>
+
+    <!-- Outlet info -->
+    <div class="glass-card rounded-3xl p-6 hidden" id="outlet-card">
+      <h2 class="font-bold text-base text-on-surface mb-3 flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary">storefront</span>
+        Pickup From
+      </h2>
+      <p id="outlet-name" class="font-bold text-on-surface"></p>
+      <p id="outlet-desc" class="text-secondary text-sm mt-0.5"></p>
+    </div>
+
+  </main>
+</div>
+
+<script>
+const ORDER_ID = '<%= orderId %>';
+
+
+
+const STEPS = [
+  { key: 'pending',   icon: 'hourglass_empty',      label: 'Order Placed',    sub: 'Waiting for outlet to accept' },
+  { key: 'accepted',  icon: 'check_circle',          label: 'Order Accepted',  sub: 'Outlet confirmed your order' },
+  { key: 'preparing', icon: 'outdoor_grill',         label: 'Preparing',       sub: 'Your food is being prepared' },
+  { key: 'ready',     icon: 'notifications_active',  label: 'Ready for Pickup',sub: 'Head to the outlet!' },
+  { key: 'completed', icon: 'task_alt',              label: 'Completed',       sub: 'Enjoy your meal!' },
+];
+const STATUS_COLORS = {
+  pending:   { bg: 'bg-yellow-100',  text: 'text-yellow-700',  icon: 'hourglass_empty' },
+  accepted:  { bg: 'bg-blue-100',    text: 'text-blue-700',    icon: 'check_circle' },
+  preparing: { bg: 'bg-orange-100',  text: 'text-orange-700',  icon: 'outdoor_grill' },
+  ready:     { bg: 'bg-green-100',   text: 'text-green-700',   icon: 'notifications_active' },
+  completed: { bg: 'bg-purple-100',  text: 'text-purple-700',  icon: 'task_alt' },
+  cancelled: { bg: 'bg-red-100',     text: 'text-red-700',     icon: 'cancel' },
+};
+
+function loadOrder() {
+  fetch(`/api/order/${ORDER_ID}`, { credentials: 'include' })
+    .then(r => r.json())
+    .then(data => {
+      const order = data.data || data.order || data;
+      if (!order || !order._id) throw new Error('Not found');
+
+      document.getElementById('status-loading').classList.add('hidden');
+      document.getElementById('status-display').classList.remove('hidden');
+      document.getElementById('order-details-card').classList.remove('hidden');
+      document.getElementById('outlet-card').classList.remove('hidden');
+
+      document.getElementById('order-id-label').textContent = `Order #${order._id.slice(-8).toUpperCase()}`;
+
+      const status = order.status || 'pending';
+      const col = STATUS_COLORS[status] || STATUS_COLORS.pending;
+      const wrap = document.getElementById('status-icon-wrap');
+      wrap.className = `w-16 h-16 rounded-2xl flex items-center justify-center ${col.bg}`;
+      const icon = document.getElementById('status-icon');
+      icon.className = `material-symbols-outlined text-3xl ${col.text}`;
+      icon.textContent = col.icon;
+
+      const currentStep = STEPS.find(s => s.key === status) || STEPS[0];
+      document.getElementById('status-text').textContent = currentStep.label;
+      document.getElementById('status-sub').textContent = currentStep.sub;
+
+      // Progress steps (skip for cancelled)
+      if (status !== 'cancelled') {
+        const currentIdx = STEPS.findIndex(s => s.key === status);
+        document.getElementById('progress-steps').innerHTML = STEPS.map((step, i) => {
+          const done = i <= currentIdx;
+          return `<div class="flex items-center gap-4 pl-0">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 z-10 transition-colors ${done ? 'bg-primary text-on-primary' : 'bg-surface-container text-secondary'}">
+              <span class="material-symbols-outlined text-base" style="font-variation-settings:'FILL' ${done ? 1 : 0}">${step.icon}</span>
+            </div>
+            <div>
+              <p class="font-bold text-sm ${done ? 'text-on-surface' : 'text-secondary'}">${step.label}</p>
+              <p class="text-secondary text-xs">${step.sub}</p>
+            </div>
+          </div>`;
+        }).join('');
+      }
+
+      // Items
+      const items = order.items || [];
+      let total = 0;
+      document.getElementById('order-items-list').innerHTML = items.map(item => {
+        const sub = (item.price||0) * (item.quantity||1);
+        total += sub;
+        return `<div class="flex justify-between items-center py-1.5">
+          <span class="text-sm text-on-surface font-medium">${item.name||'Item'} <span class="text-secondary">×${item.quantity||1}</span></span>
+          <span class="font-bold text-sm text-on-surface">₹${sub}</span>
+        </div>`;
+      }).join('');
+      document.getElementById('order-total').textContent = `₹${order.totalAmount || total}`;
+
+      // Outlet
+      const outlet = order.outlet || {};
+      document.getElementById('outlet-name').textContent = outlet.name || 'Campus Outlet';
+      document.getElementById('outlet-desc').textContent = outlet.description || '';
+
+      // Auto-refresh if not terminal
+      if (!['completed', 'cancelled'].includes(status)) {
+        setTimeout(loadOrder, 15000);
+      }
+    })
+    .catch(() => {
+      document.getElementById('status-loading').innerHTML = `<div class="flex items-center gap-3 text-error text-sm font-medium"><span class="material-symbols-outlined">error</span>Failed to load order</div>`;
+    });
+}
+
+loadOrder();
+</script>
+
+<%- include('../partials/footer') %>

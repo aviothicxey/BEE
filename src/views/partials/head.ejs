@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= typeof title !== 'undefined' ? title + ' — CampusBites' : 'CampusBites' %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: 'var(--primary)',
+            'on-primary': 'var(--on-primary)',
+            'primary-container': 'var(--primary-container)',
+            'on-primary-container': 'var(--on-primary-container)',
+            'primary-fixed': 'var(--primary-fixed)',
+            secondary: 'var(--secondary)',
+            'on-secondary': 'var(--on-secondary)',
+            'secondary-container': 'var(--secondary-container)',
+            'on-secondary-container': 'var(--on-secondary-container)',
+            tertiary: 'var(--tertiary)',
+            'on-tertiary': 'var(--on-tertiary)',
+            'tertiary-container': 'var(--tertiary-container)',
+            'on-tertiary-container': 'var(--on-tertiary-container)',
+            background: 'var(--background)',
+            'on-background': 'var(--on-background)',
+            surface: 'var(--surface)',
+            'on-surface': 'var(--on-surface)',
+            'on-surface-variant': 'var(--on-surface-variant)',
+            'surface-container-low': 'var(--surface-container-low)',
+            'surface-container': 'var(--surface-container)',
+            'surface-container-high': 'var(--surface-container-high)',
+            'surface-container-highest': 'var(--surface-container-highest)',
+            outline: 'var(--outline)',
+            'outline-variant': 'var(--outline-variant)',
+            error: 'var(--error)',
+            'error-container': 'var(--error-container)',
+          },
+          fontFamily: {
+            sans: ['Urbanist', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-background text-on-surface font-sans antialiased min-h-screen">

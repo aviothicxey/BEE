@@ -1,0 +1,195 @@
+<%- include('../partials/head', { title: 'My Profile' }) %>
+<%- include('../partials/navbar') %>
+
+<div class="bg-background min-h-screen pb-32">
+  <main class="pt-24 pb-8 px-5 md:px-10 max-w-2xl mx-auto">
+
+    <div class="mb-6">
+      <h1 class="font-extrabold text-3xl text-on-surface tracking-tight">My Profile</h1>
+      <p class="text-secondary text-sm mt-1">Manage your account details</p>
+    </div>
+
+    <!-- Profile card -->
+    <div class="glass-card rounded-3xl p-8 mb-5">
+
+      <!-- Avatar + upload -->
+      <div class="flex items-center gap-5 mb-8">
+        <div class="relative group flex-shrink-0">
+          <!-- Avatar circle -->
+          <div id="avatar-wrap"
+            class="w-20 h-20 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-extrabold text-3xl overflow-hidden">
+            <% if (user.pfp) { %>
+              <img id="avatar-img" src="<%= user.pfp %>" alt="Profile" class="w-full h-full object-cover" />
+            <% } else { %>
+              <span id="avatar-initials"><%= user.name ? user.name[0].toUpperCase() : 'U' %></span>
+            <% } %>
+          </div>
+
+          <!-- Camera overlay button -->
+          <label for="pfp-input"
+            class="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+            <span class="material-symbols-outlined text-white text-xl">photo_camera</span>
+          </label>
+          <input type="file" id="pfp-input" accept="image/jpeg,image/png,image/webp" class="hidden" onchange="previewAndUploadPfp(this)" />
+
+          <!-- Upload spinner -->
+          <div id="pfp-spinner"
+            class="absolute inset-0 rounded-full bg-black/60 items-center justify-center hidden">
+            <div class="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        </div>
+
+        <div>
+          <h2 class="font-bold text-xl text-on-surface" id="profile-name"><%= user.name || 'Student' %></h2>
+          <p class="text-secondary text-sm" id="profile-email"><%= user.email || '' %></p>
+          <span class="inline-block mt-1 bg-primary/10 text-primary text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider"><%= user.role || 'student' %></span>
+          <p class="text-secondary text-[10px] mt-1.5">Tap the photo to change your picture</p>
+        </div>
+      </div>
+
+      <form id="profile-form" class="space-y-4" onsubmit="updateProfile(event)">
+        <div class="space-y-1">
+          <label class="font-bold text-xs text-on-surface-variant ml-1 uppercase tracking-wider">Full Name</label>
+          <div class="relative group">
+            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors">person</span>
+            <input type="text" name="name" id="input-name" value="<%= user.name || '' %>"
+              class="w-full pl-12 pr-4 py-3.5 bg-surface-container-low border-none rounded-xl focus:ring-2 focus:ring-primary/20 focus:bg-white text-sm font-medium outline-none transition-all" />
+          </div>
+        </div>
+
+        <div class="space-y-1">
+          <label class="font-bold text-xs text-on-surface-variant ml-1 uppercase tracking-wider">Email</label>
+          <div class="relative group">
+            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline text-xl">mail</span>
+            <input type="email" name="email" id="input-email" value="<%= user.email || '' %>" disabled
+              class="w-full pl-12 pr-4 py-3.5 bg-surface-container border-none rounded-xl text-sm font-medium outline-none text-secondary cursor-not-allowed" />
+          </div>
+          <p class="text-secondary text-[10px] ml-1">Email cannot be changed</p>
+        </div>
+
+        <div class="space-y-1">
+          <label class="font-bold text-xs text-on-surface-variant ml-1 uppercase tracking-wider">Phone (optional)</label>
+          <div class="relative group">
+            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors">phone</span>
+            <input type="tel" name="phone" id="input-phone" value="<%= user.phone || '' %>"
+              class="w-full pl-12 pr-4 py-3.5 bg-surface-container-low border-none rounded-xl focus:ring-2 focus:ring-primary/20 focus:bg-white text-sm font-medium outline-none transition-all" />
+          </div>
+        </div>
+
+        <button type="submit" id="save-btn"
+          class="w-full h-12 bg-primary-container text-on-primary-container font-bold rounded-xl shadow-sm hover:shadow-md hover:-translate-y-0.5 active:scale-95 transition-all flex items-center justify-center gap-2">
+          <span class="material-symbols-outlined">save</span> Save Changes
+        </button>
+      </form>
+    </div>
+
+    <!-- Quick links -->
+    <div class="glass-card rounded-3xl p-6 space-y-2">
+      <h2 class="font-bold text-sm text-on-surface-variant uppercase tracking-wider mb-4">Quick Access</h2>
+      <a href="/orders" class="flex items-center gap-4 p-4 rounded-2xl hover:bg-surface-container-low transition-colors">
+        <span class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary material-symbols-outlined">receipt_long</span>
+        <div class="flex-1">
+          <p class="font-bold text-sm text-on-surface">My Orders</p>
+          <p class="text-secondary text-xs">View your order history</p>
+        </div>
+        <span class="material-symbols-outlined text-secondary">chevron_right</span>
+      </a>
+      <div class="h-px bg-outline-variant/20"></div>
+      <button onclick="logout()" class="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-error-container/10 transition-colors text-left">
+        <span class="w-10 h-10 rounded-xl bg-error/10 flex items-center justify-center text-error material-symbols-outlined">logout</span>
+        <div class="flex-1">
+          <p class="font-bold text-sm text-error">Logout</p>
+          <p class="text-secondary text-xs">Sign out of your account</p>
+        </div>
+      </button>
+    </div>
+  </main>
+</div>
+
+<script>
+async function updateProfile(e) {
+  e.preventDefault();
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="w-4 h-4 border-2 border-on-primary-container border-t-transparent rounded-full animate-spin"></div> Saving...';
+
+  const name  = document.getElementById('input-name').value.trim();
+  const phone = document.getElementById('input-phone').value.trim();
+
+  try {
+    const formData = new FormData();
+    if (name)  formData.append('name',  name);
+    if (phone) formData.append('phone', phone);
+
+    const r = await fetch('/api/auth/me/update', {
+      method: 'PUT',
+      credentials: 'include',
+      body: formData   // no Content-Type header — browser sets multipart boundary
+    });
+    const data = await r.json();
+    if (data.success) {
+      showToast('Profile updated!', 'success');
+      // Update displayed name in page
+      const nameEl = document.getElementById('profile-name');
+      if (nameEl) nameEl.textContent = data.user.name || name;
+      // Update navbar initials too
+      const initialsEl = document.getElementById('avatar-initials');
+      if (initialsEl) initialsEl.textContent = (data.user.name || name)[0].toUpperCase();
+      const navName = document.querySelector('#user-menu-wrapper .font-bold.text-sm');
+      if (navName) navName.textContent = (data.user.name || name).split(' ')[0];
+    } else {
+      showToast(data.message || 'Update failed', 'error');
+    }
+  } catch {
+    showToast('Could not save changes', 'error');
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<span class="material-symbols-outlined">save</span> Save Changes';
+}
+
+async function previewAndUploadPfp(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  // Local preview immediately
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const wrap = document.getElementById('avatar-wrap');
+    wrap.innerHTML = `<img id="avatar-img" src="${e.target.result}" alt="Profile" class="w-full h-full object-cover" />`;
+    // Update navbar avatar too
+    const navAvatar = document.querySelector('#user-menu-wrapper .w-7.h-7');
+    if (navAvatar) {
+      navAvatar.innerHTML = `<img src="${e.target.result}" alt="PFP" class="w-full h-full object-cover rounded-full" />`;
+    }
+  };
+  reader.readAsDataURL(file);
+
+  // Upload to server
+  const spinner = document.getElementById('pfp-spinner');
+  if (spinner) { spinner.style.display = 'flex'; spinner.classList.remove('hidden'); }
+
+  try {
+    const formData = new FormData();
+    formData.append('pfp', file);
+
+    const r = await fetch('/api/auth/me/update', {
+      method: 'PUT',
+      credentials: 'include',
+      body: formData
+    });
+    const data = await r.json();
+    if (data.success) {
+      showToast('Profile picture updated!', 'success');
+    } else {
+      showToast(data.message || 'Upload failed', 'error');
+    }
+  } catch {
+    showToast('Could not upload image', 'error');
+  }
+
+  if (spinner) { spinner.style.display = 'none'; }
+}
+</script>
+
+<%- include('../partials/footer') %>

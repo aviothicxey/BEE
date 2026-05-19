@@ -1,0 +1,260 @@
+<%- include('../partials/head', { title: 'Sign Up' }) %>
+
+<div class="bg-background text-on-background min-h-screen flex flex-col md:flex-row">
+
+  <!-- Mobile Top -->
+  <div class="md:hidden flex items-center gap-3 px-5 py-4 border-b border-outline-variant/20 bg-surface">
+    <div class="w-9 h-9 bg-primary-container rounded-xl flex items-center justify-center">
+      <span class="material-symbols-outlined text-on-primary-container text-xl">
+        lunch_dining
+      </span>
+    </div>
+    <span class="font-extrabold text-lg text-primary">
+      CampusBites
+    </span>
+  </div>
+
+  <!-- Left Section -->
+  <aside class="hidden md:flex md:w-1/2 lg:w-3/5 bg-primary relative overflow-hidden flex-col justify-end p-10">
+
+    <div class="absolute inset-0 bg-gradient-to-br from-primary via-tertiary to-primary-container opacity-80"></div>
+
+    <div class="absolute top-20 right-20 w-64 h-64 border border-white/10 rounded-full"></div>
+    <div class="absolute top-32 right-32 w-40 h-40 border border-white/10 rounded-full"></div>
+
+    <div class="relative z-20 space-y-4">
+      <div class="flex items-center gap-3 mb-8">
+        <div class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center">
+          <span class="material-symbols-outlined text-white text-2xl">
+            lunch_dining
+          </span>
+        </div>
+
+        <span class="font-extrabold text-2xl text-white">
+          CampusBites
+        </span>
+      </div>
+
+      <h1 class="font-extrabold text-4xl text-white max-w-lg leading-tight">
+        Fueling the next generation of campus leaders.
+      </h1>
+
+      <p class="text-primary-fixed text-base max-w-md">
+        Join thousands of students getting fast food ready for pickup straight on campus.
+      </p>
+    </div>
+  </aside>
+
+  <!-- Right -->
+  <main class="flex-1 flex items-center justify-center p-5 md:p-10 overflow-y-auto">
+
+    <div class="w-full max-w-[480px] space-y-6">
+
+      <header class="space-y-2">
+        <h2 class="font-bold text-2xl text-on-surface">
+          Create your student account
+        </h2>
+
+        <p class="text-secondary text-sm">
+          Enter your details to start ordering.
+        </p>
+      </header>
+
+      <form id="signup-form" class="space-y-4">
+
+        <!-- Name -->
+        <div class="space-y-1">
+          <label class="font-bold text-xs uppercase tracking-wider">
+            Full Name
+          </label>
+
+          <input
+            type="text"
+            name="name"
+            required
+            class="w-full px-4 py-3 rounded-xl bg-surface-container-low outline-none focus:ring-2 focus:ring-primary/20"
+            placeholder="Alex Johnson"
+          />
+        </div>
+
+        <!-- Email -->
+        <div class="space-y-1">
+          <label class="font-bold text-xs uppercase tracking-wider">
+            Email
+          </label>
+
+          <input
+            type="email"
+            name="email"
+            required
+            class="w-full px-4 py-3 rounded-xl bg-surface-container-low outline-none focus:ring-2 focus:ring-primary/20"
+            placeholder="alex@gmail.com"
+          />
+        </div>
+
+        <!-- Phone -->
+        <div class="space-y-1">
+          <label class="font-bold text-xs uppercase tracking-wider">
+            Phone
+          </label>
+
+          <input
+            type="tel"
+            name="phone"
+            required
+            maxlength="10"
+            class="w-full px-4 py-3 rounded-xl bg-surface-container-low outline-none focus:ring-2 focus:ring-primary/20"
+            placeholder="9876543210"
+          />
+        </div>
+
+        <!-- Password -->
+        <div class="space-y-1">
+          <label class="font-bold text-xs uppercase tracking-wider">
+            Password
+          </label>
+
+          <input
+            type="password"
+            id="password"
+            name="password"
+            required
+            class="w-full px-4 py-3 rounded-xl bg-surface-container-low outline-none focus:ring-2 focus:ring-primary/20"
+            placeholder="Minimum 6 characters"
+          />
+        </div>
+
+        <!-- Confirm Password -->
+        <div class="space-y-1">
+          <label class="font-bold text-xs uppercase tracking-wider">
+            Confirm Password
+          </label>
+
+          <input
+            type="password"
+            id="confirmPassword"
+            required
+            class="w-full px-4 py-3 rounded-xl bg-surface-container-low outline-none focus:ring-2 focus:ring-primary/20"
+            placeholder="Re-enter password"
+          />
+
+          <p id="match-error" class="text-error text-xs hidden">
+            Passwords do not match
+          </p>
+        </div>
+
+        <!-- Button -->
+        <button
+          type="submit"
+          id="signup-btn"
+          class="w-full h-14 bg-primary text-white font-bold rounded-2xl hover:opacity-90 transition-all"
+        >
+          Create Account
+        </button>
+
+      </form>
+
+      <p class="text-center text-secondary text-sm">
+        Already have an account?
+
+        <a href="/login" class="text-primary font-bold hover:underline">
+          Login
+        </a>
+      </p>
+
+    </div>
+  </main>
+</div>
+
+<script>
+
+function notify(message) {
+  alert(message);
+}
+
+const form = document.getElementById('signup-form');
+
+form.addEventListener('submit', async (e) => {
+
+  e.preventDefault();
+
+  const name = document.querySelector('input[name="name"]').value.trim();
+
+  const email = document.querySelector('input[name="email"]').value.trim();
+
+  const phone = document.querySelector('input[name="phone"]').value.trim();
+
+  const password = document.getElementById('password').value;
+
+  const confirmPassword = document.getElementById('confirmPassword').value;
+
+  // Validation
+  if (name.length < 2) {
+    return notify('Name must be at least 2 characters');
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!emailRegex.test(email)) {
+    return notify('Invalid email');
+  }
+
+  if (!/^[0-9]{10}$/.test(phone)) {
+    return notify('Phone must be exactly 10 digits');
+  }
+
+  if (password.length < 6) {
+    return notify('Password must be at least 6 characters');
+  }
+
+  if (password !== confirmPassword) {
+    document.getElementById('match-error').classList.remove('hidden');
+    return;
+  } else {
+    document.getElementById('match-error').classList.add('hidden');
+  }
+
+  try {
+
+    const response = await fetch('/api/auth/signup', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        name,
+        email,
+        phone,
+        password
+      })
+    });
+
+    const data = await response.json();
+
+    console.log(data);
+
+    if (response.ok) {
+
+      notify('Account created successfully');
+
+      window.location.href = '/login';
+
+    } else {
+
+      notify(data.message || 'Signup failed');
+
+    }
+
+  } catch (error) {
+
+    console.error(error);
+
+    notify('Something went wrong');
+
+  }
+
+});
+
+</script>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,104 @@
+<%- include('../partials/head', { title: 'My Orders' }) %>
+<%- include('../partials/navbar') %>
+
+<div class="bg-background min-h-screen pb-32">
+  <main class="pt-24 pb-8 px-5 md:px-10 max-w-screen-xl mx-auto">
+    <div class="mb-6">
+      <h1 class="font-extrabold text-3xl md:text-4xl text-on-surface tracking-tight">My Orders</h1>
+      <p class="text-secondary text-sm mt-1">Track and manage your orders</p>
+    </div>
+
+    <!-- Skeletons -->
+    <div id="orders-loading" class="space-y-4">
+      <% for(let i=0;i<3;i++) { %>
+      <div class="bg-white rounded-2xl p-5 border border-outline-variant/10">
+        <div class="flex justify-between items-start mb-4">
+          <div class="h-5 shimmer rounded-full w-48"></div>
+          <div class="h-6 shimmer rounded-full w-20"></div>
+        </div>
+        <div class="space-y-2">
+          <div class="h-4 shimmer rounded-full w-3/4"></div>
+          <div class="h-4 shimmer rounded-full w-1/2"></div>
+        </div>
+      </div>
+      <% } %>
+    </div>
+
+    <div id="orders-list" class="hidden space-y-4"></div>
+    <div id="orders-empty" class="hidden text-center py-20">
+      <div class="w-20 h-20 bg-primary/5 rounded-full flex items-center justify-center mx-auto mb-4">
+        <span class="material-symbols-outlined text-4xl text-primary/30">receipt_long</span>
+      </div>
+      <p class="font-bold text-on-surface">No orders yet</p>
+      <a href="/outlets" class="mt-3 text-primary font-bold text-sm hover:underline block">Browse Outlets</a>
+    </div>
+  </main>
+</div>
+
+<script>
+const statusClasses = {
+  pending: 'status-pending',
+  accepted: 'status-accepted',
+  preparing: 'status-preparing',
+  ready: 'status-ready',
+  completed: 'status-completed',
+  cancelled: 'status-cancelled',
+};
+const statusIcons = {
+  pending: 'hourglass_empty',
+  accepted: 'check_circle',
+  preparing: 'outdoor_grill',
+  ready: 'notifications_active',
+  completed: 'task_alt',
+  cancelled: 'cancel',
+};
+
+function orderCard(order) {
+  const statusCls = statusClasses[order.status] || 'bg-surface-container text-secondary';
+  const icon = statusIcons[order.status] || 'info';
+  const date = new Date(order.createdAt).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
+  const items = (order.items || []).map(i => `${i.name || 'Item'} ×${i.quantity}`).join(', ');
+  return `<div class="bg-white rounded-2xl p-5 border border-outline-variant/10 shadow-sm hover:shadow-md transition-shadow">
+    <div class="flex justify-between items-start mb-3">
+      <div>
+        <h3 class="font-bold text-base text-on-surface">${order.outlet?.name || 'Outlet'}</h3>
+        <p class="text-secondary text-xs mt-0.5">${date} · ${(order.items||[]).length} item(s)</p>
+      </div>
+      <span class="text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1.5 ${statusCls}">
+        <span class="material-symbols-outlined text-sm">${icon}</span>
+        ${order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : 'Unknown'}
+      </span>
+    </div>
+    <p class="text-secondary text-sm line-clamp-1">${items}</p>
+    <div class="flex justify-between items-center mt-4">
+      <span class="font-bold text-primary text-base">₹${order.totalAmount || 0}</span>
+      <a href="/order/${order._id}" class="text-primary font-bold text-xs hover:underline flex items-center gap-1">
+        Track Order <span class="material-symbols-outlined text-sm">arrow_forward</span>
+      </a>
+    </div>
+  </div>`;
+}
+
+
+
+
+fetch('/api/order/myorders', {
+  credentials: 'include'
+})
+  .then(r => r.json())
+  .then(data => {
+    document.getElementById('orders-loading').remove();
+    const orders = data.data || data.orders || data || [];
+    if (orders.length === 0) {
+      document.getElementById('orders-empty').classList.remove('hidden');
+    } else {
+      document.getElementById('orders-list').innerHTML = orders.map(orderCard).join('');
+      document.getElementById('orders-list').classList.remove('hidden');
+    }
+  })
+  .catch(() => {
+    document.getElementById('orders-loading').innerHTML = '<div class="p-4 bg-error-container/20 rounded-2xl text-error text-sm font-medium flex items-center gap-3"><span class="material-symbols-outlined">error</span>Failed to load orders</div>';
+  });
+</script>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,151 @@
+<%- include('../partials/head', { title: 'All Outlets' }) %>
+<%- include('../partials/navbar') %>
+
+<div class="bg-background min-h-screen pb-32">
+  <main class="pt-24 pb-8 px-5 md:px-10 max-w-screen-xl mx-auto">
+
+    <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div>
+        <h1 class="font-extrabold text-3xl md:text-4xl text-on-surface tracking-tight">All Outlets</h1>
+        <p class="text-secondary text-sm mt-1" id="outlet-count">Loading...</p>
+      </div>
+      <form action="/outlets" method="GET" class="relative w-full md:max-w-sm">
+        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-secondary text-lg">search</span>
+        <input name="q" value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>"
+          class="w-full h-12 pl-11 pr-4 bg-surface-container-low border-none rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none placeholder:text-secondary/60"
+          placeholder="Search outlets..." id="outlet-search" />
+      </form>
+    </div>
+
+    <!-- Category chips -->
+    <div class="flex gap-2.5 overflow-x-auto no-scrollbar pb-2 mb-6">
+      <% [
+        { icon:'lunch_dining', label:'Burgers',  query:'burger' },
+        { icon:'local_pizza',  label:'Pizza',    query:'pizza' },
+        { icon:'coffee',       label:'Coffee',   query:'coffee' },
+        { icon:'ramen_dining', label:'Noodles',  query:'noodles' },
+        { icon:'icecream',     label:'Desserts', query:'desserts' },
+      ].forEach(c => { %>
+      <a href="/search?q=<%= encodeURIComponent(c.query) %>"
+        class="flex items-center gap-2 px-4 py-2 bg-white border border-outline-variant/30 rounded-full font-bold text-xs whitespace-nowrap text-secondary hover:text-primary hover:border-primary/40 hover:shadow-sm transition-all flex-shrink-0">
+        <span class="material-symbols-outlined text-primary text-base"><%= c.icon %></span>
+        <%= c.label %>
+      </a>
+      <% }) %>
+    </div>
+
+    <!-- Skeleton / Outlets -->
+    <div id="outlets-grid">
+      <!-- Open section -->
+      <section id="open-section" class="mb-10 hidden">
+        <h2 class="font-bold text-base text-on-surface-variant uppercase tracking-wider mb-4 flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+          Open Now · <span id="open-count">0</span>
+        </h2>
+        <div id="open-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"></div>
+      </section>
+
+      <!-- Closed section -->
+      <section id="closed-section" class="opacity-60 hidden">
+        <h2 class="font-bold text-base text-secondary uppercase tracking-wider mb-4">Currently Closed · <span id="closed-count">0</span></h2>
+        <div id="closed-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"></div>
+      </section>
+
+      <!-- Skeletons (shown while loading) -->
+      <div id="skeletons" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+        <% for(let i=0;i<8;i++) { %>
+        <div class="bg-white rounded-2xl overflow-hidden border border-outline-variant/10">
+          <div class="h-48 shimmer"></div>
+          <div class="p-4 space-y-2">
+            <div class="h-4 shimmer rounded-full w-3/4"></div>
+            <div class="h-3 shimmer rounded-full w-1/2"></div>
+            <div class="h-3 shimmer rounded-full w-1/3"></div>
+          </div>
+        </div>
+        <% } %>
+      </div>
+
+      <!-- Empty state -->
+      <div id="empty-state" class="hidden text-center py-20">
+        <div class="w-20 h-20 bg-primary/5 rounded-full flex items-center justify-center mx-auto mb-4">
+          <span class="material-symbols-outlined text-4xl text-primary/30">search_off</span>
+        </div>
+        <p class="font-bold text-on-surface">No outlets found</p>
+        <a href="/outlets" class="mt-3 text-primary font-bold text-sm hover:underline block">Clear search</a>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+const searchQuery = '<%= typeof searchQuery !== "undefined" ? searchQuery.replace(/'/g, "\\'") : "" %>';
+
+function outletCard(o) {
+  return `<a href="/outlet/${o._id}" class="group cursor-pointer bg-white rounded-2xl overflow-hidden shadow-[0_8px_24px_rgba(0,0,0,0.04)] hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-outline-variant/5 block">
+    <div class="relative h-48 overflow-hidden">
+      ${o.image
+        ? `<img src="${o.image}" alt="${o.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"/>`
+        : `<div class="w-full h-full bg-gradient-to-br from-primary/10 to-tertiary/10 flex items-center justify-center"><span class="material-symbols-outlined text-6xl text-primary/20">storefront</span></div>`}
+      <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
+      <div class="absolute top-3 right-3">
+        <span class="text-[10px] font-bold px-2.5 py-1 rounded-full backdrop-blur-sm ${o.isSuspended ? 'bg-error/80 text-white' : 'bg-green-500/90 text-white'}">
+          ${o.isSuspended ? 'Closed' : 'Open'}
+        </span>
+      </div>
+      <div class="absolute top-3 left-3 glass-tag px-2 py-0.5 rounded-full flex items-center gap-1">
+        <span class="material-symbols-outlined text-sm text-tertiary-container" style="font-variation-settings:'FILL' 1">star</span>
+        <span class="font-bold text-xs text-on-surface">4.8</span>
+      </div>
+      ${o.isSuspended ? '<div class="absolute inset-0 bg-black/30"></div>' : ''}
+    </div>
+    <div class="p-4">
+      <h4 class="font-bold text-base text-on-surface group-hover:text-primary transition-colors leading-tight">${o.name}</h4>
+      ${o.description ? `<p class="text-secondary text-xs mt-0.5 line-clamp-1">${o.description}</p>` : ''}
+      <div class="flex items-center gap-1.5 mt-3">
+        <span class="material-symbols-outlined text-primary text-sm">schedule</span>
+        <span class="font-bold text-xs text-primary">${o.timing || '10-15 min'}</span>
+      </div>
+    </div>
+  </a>`;
+}
+
+fetch('/api/outlets/all')
+  .then(r => r.json())
+  .then(data => {
+    const all = data.data || data.outlets || data || [];
+    const q = searchQuery.toLowerCase();
+    const filtered = q ? all.filter(o =>
+      o.name?.toLowerCase().includes(q) || o.description?.toLowerCase().includes(q)
+    ) : all;
+
+    document.getElementById('skeletons').remove();
+
+    const open = filtered.filter(o => !o.isSuspended);
+    const closed = filtered.filter(o => o.isSuspended);
+
+    document.getElementById('outlet-count').textContent = `${open.length} open now`;
+
+    if (filtered.length === 0) {
+      document.getElementById('empty-state').classList.remove('hidden');
+    } else {
+      if (open.length > 0) {
+        document.getElementById('open-count').textContent = open.length;
+        document.getElementById('open-grid').innerHTML = open.map(outletCard).join('');
+        document.getElementById('open-section').classList.remove('hidden');
+      }
+      if (closed.length > 0) {
+        document.getElementById('closed-count').textContent = closed.length;
+        document.getElementById('closed-grid').innerHTML = closed.map(outletCard).join('');
+        document.getElementById('closed-section').classList.remove('hidden');
+      }
+    }
+  })
+  .catch(() => {
+    document.getElementById('skeletons').innerHTML = `
+      <div class="col-span-full flex items-center gap-3 p-4 bg-error-container/20 rounded-2xl text-error text-sm font-medium">
+        <span class="material-symbols-outlined">error</span> Failed to load outlets.
+      </div>`;
+  });
+</script>
+
+<%- include('../partials/footer') %>

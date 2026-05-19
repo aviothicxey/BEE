@@ -1,0 +1,333 @@
+<%- include('../partials/head', { title: 'Admin Dashboard' }) %>
+<%- include('../partials/navbar') %>
+
+<div class="bg-background min-h-screen pb-32">
+  <main class="pt-24 pb-8 px-5 md:px-10 max-w-screen-xl mx-auto">
+
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="font-extrabold text-3xl md:text-4xl text-on-surface tracking-tight">Admin Dashboard</h1>
+      <p class="text-secondary text-sm mt-1">Manage your outlet, menu, and orders</p>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <% [
+        { id:'stat-orders',  icon:'receipt_long',   label:'Total Orders',  color:'text-primary',   bg:'bg-primary/10' },
+        { id:'stat-revenue', icon:'payments',        label:'Revenue (₹)',   color:'text-green-600', bg:'bg-green-50' },
+        { id:'stat-pending', icon:'hourglass_empty', label:'Pending',       color:'text-yellow-600',bg:'bg-yellow-50' },
+        { id:'stat-menu',    icon:'restaurant_menu', label:'Menu Items',    color:'text-tertiary',  bg:'bg-tertiary/10' },
+      ].forEach(s => { %>
+      <div class="glass-card p-5 rounded-2xl flex flex-col gap-2">
+        <div class="w-10 h-10 rounded-xl <%= s.bg %> flex items-center justify-center">
+          <span class="material-symbols-outlined <%= s.color %>"><%= s.icon %></span>
+        </div>
+        <p class="font-extrabold text-2xl text-on-surface" id="<%= s.id %>"><span class="shimmer rounded h-7 w-16 block"></span></p>
+        <p class="text-secondary text-xs font-medium"><%= s.label %></p>
+      </div>
+      <% }) %>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex gap-2 mb-6 border-b border-outline-variant/20">
+      <% ['Orders', 'Menu', 'Settings'].forEach((tab, i) => { %>
+      <button onclick="switchTab('<%= tab.toLowerCase() %>')" id="tab-<%= tab.toLowerCase() %>"
+        class="px-5 py-3 font-bold text-sm border-b-2 transition-colors <%= i===0 ? 'border-primary text-primary' : 'border-transparent text-secondary hover:text-on-surface' %>">
+        <%= tab %>
+      </button>
+      <% }) %>
+    </div>
+
+    <!-- Orders Tab -->
+    <div id="panel-orders">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="font-bold text-base text-on-surface">Recent Orders</h2>
+        <select id="status-filter" onchange="loadOrders()" class="text-sm font-medium px-3 py-2 bg-surface-container-low rounded-xl border-none outline-none focus:ring-2 focus:ring-primary/20">
+          <option value="">All Status</option>
+          <option>pending</option><option>accepted</option><option>preparing</option><option>ready</option><option>completed</option><option>cancelled</option>
+        </select>
+      </div>
+      <div id="orders-table" class="space-y-3">
+        <% for(let i=0;i<5;i++) { %>
+        <div class="bg-white rounded-2xl p-4 flex items-center gap-4 border border-outline-variant/10">
+          <div class="h-5 shimmer rounded-full flex-1"></div>
+          <div class="h-6 shimmer rounded-full w-20"></div>
+          <div class="h-8 shimmer rounded-full w-24"></div>
+        </div>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Menu Tab -->
+    <div id="panel-menu" class="hidden">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="font-bold text-base text-on-surface">Menu Items</h2>
+        <button onclick="showAddItemModal()"
+          class="bg-primary text-on-primary px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-primary/90 transition-colors shadow-sm">
+          <span class="material-symbols-outlined text-sm">add</span> Add Item
+        </button>
+      </div>
+      <div id="menu-grid-admin" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <% for(let i=0;i<6;i++) { %>
+        <div class="bg-white rounded-2xl overflow-hidden border border-outline-variant/10">
+          <div class="h-40 shimmer"></div>
+          <div class="p-4 space-y-2">
+            <div class="h-4 shimmer rounded-full w-3/4"></div>
+            <div class="h-3 shimmer rounded-full w-1/2"></div>
+          </div>
+        </div>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Settings Tab -->
+    <div id="panel-settings" class="hidden">
+      <div class="glass-card rounded-3xl p-6 max-w-xl space-y-5">
+        <h2 class="font-bold text-base text-on-surface">Outlet Settings</h2>
+        <div id="settings-loading" class="space-y-3">
+          <div class="h-12 shimmer rounded-xl"></div>
+          <div class="h-12 shimmer rounded-xl"></div>
+          <div class="h-12 shimmer rounded-xl"></div>
+        </div>
+        <form id="settings-form" class="hidden space-y-4" onsubmit="saveSettings(event)">
+          <div class="space-y-1">
+            <label class="font-bold text-xs text-on-surface-variant ml-1 uppercase tracking-wider">Outlet Name</label>
+            <input type="text" id="setting-name" class="w-full px-4 py-3.5 bg-surface-container-low rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all" />
+          </div>
+          <div class="space-y-1">
+            <label class="font-bold text-xs text-on-surface-variant ml-1 uppercase tracking-wider">Description</label>
+            <textarea id="setting-desc" rows="3" class="w-full px-4 py-3.5 bg-surface-container-low rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all resize-none"></textarea>
+          </div>
+          <div class="space-y-1">
+            <label class="font-bold text-xs text-on-surface-variant ml-1 uppercase tracking-wider">Timing</label>
+            <input type="text" id="setting-timing" placeholder="e.g. 10-15 min" class="w-full px-4 py-3.5 bg-surface-container-low rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all" />
+          </div>
+          <button type="submit" class="w-full h-12 bg-primary-container text-on-primary-container font-bold rounded-xl flex items-center justify-center gap-2 hover:-translate-y-0.5 active:scale-95 transition-all">
+            <span class="material-symbols-outlined">save</span> Save Settings
+          </button>
+        </form>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Add Menu Item Modal -->
+<div id="add-item-modal" class="fixed inset-0 z-50 hidden bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl">
+    <div class="flex justify-between items-center mb-6">
+      <h3 class="font-bold text-xl text-on-surface">Add Menu Item</h3>
+      <button onclick="closeModal()" class="w-9 h-9 rounded-full bg-surface-container-low flex items-center justify-center hover:bg-surface-container">
+        <span class="material-symbols-outlined text-secondary">close</span>
+      </button>
+    </div>
+    <form id="add-item-form" onsubmit="submitAddItem(event)" class="space-y-4">
+      <input type="text" name="name" required placeholder="Item name"
+        class="w-full px-4 py-3.5 bg-surface-container-low rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all" />
+      <input type="number" name="price" required placeholder="Price (₹)" min="1"
+        class="w-full px-4 py-3.5 bg-surface-container-low rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all" />
+      <textarea name="description" rows="3" placeholder="Description (optional)"
+        class="w-full px-4 py-3.5 bg-surface-container-low rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all resize-none"></textarea>
+      <label class="flex items-center gap-3 cursor-pointer">
+        <input type="checkbox" name="available" checked class="accent-primary w-4 h-4" />
+        <span class="font-medium text-sm text-on-surface">Available</span>
+      </label>
+      <div class="flex gap-3 pt-2">
+        <button type="button" onclick="closeModal()" class="flex-1 h-12 border border-outline-variant/40 text-secondary font-bold rounded-xl hover:bg-surface-container-low transition-colors">Cancel</button>
+        <button type="submit" class="flex-1 h-12 bg-primary text-on-primary font-bold rounded-xl hover:bg-primary/90 transition-colors">Add Item</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const token = localStorage.getItem('token');
+if (!token) window.location.href = '/login';
+
+let myOutletId = null;
+
+function switchTab(tab) {
+  ['orders','menu','settings'].forEach(t => {
+    document.getElementById(`panel-${t}`).classList.toggle('hidden', t !== tab);
+    const btn = document.getElementById(`tab-${t}`);
+    btn.className = btn.className.replace(/border-primary text-primary|border-transparent text-secondary hover:text-on-surface/, '');
+    btn.classList.add(t === tab ? 'border-primary' : 'border-transparent', t === tab ? 'text-primary' : 'text-secondary', ...(t !== tab ? ['hover:text-on-surface'] : []));
+  });
+  if (tab === 'menu' && myOutletId) loadMenu();
+  if (tab === 'settings') loadSettings();
+}
+
+// ── Load stats ─────────────────────────────────────────────────
+Promise.all([
+  fetch('/api/admin/stats/orders-count', { headers: { 'Authorization': `Bearer ${token}` } }).then(r=>r.json()),
+  fetch('/api/admin/stats/revenue', { headers: { 'Authorization': `Bearer ${token}` } }).then(r=>r.json()),
+]).then(([oc, rev]) => {
+  document.getElementById('stat-orders').textContent = oc.data?.total || oc.total || 0;
+  const revenue = rev.data?.total || rev.total || 0;
+  document.getElementById('stat-revenue').textContent = `₹${revenue.toLocaleString('en-IN')}`;
+  const pending = oc.data?.pending || oc.pending || 0;
+  document.getElementById('stat-pending').textContent = pending;
+}).catch(() => {});
+
+// ── Load outlet ID ─────────────────────────────────────────────
+fetch('/api/auth/me', { headers: { 'Authorization': `Bearer ${token}` } })
+  .then(r=>r.json())
+  .then(data => {
+    const u = data.user || data;
+    myOutletId = u.outlet;
+    loadOrders();
+    // Menu count
+    if (myOutletId) {
+      fetch(`/api/menu/outlet/${myOutletId}`).then(r=>r.json()).then(d => {
+        document.getElementById('stat-menu').textContent = (d.data||d.menu||d||[]).length;
+      });
+    }
+  });
+
+// ── Orders ─────────────────────────────────────────────────────
+const STATUS_NEXT = { pending:'accepted', accepted:'preparing', preparing:'ready', ready:'completed' };
+const STATUS_LABELS = { pending:'Accept', accepted:'Start Preparing', preparing:'Mark Ready', ready:'Complete' };
+const STATUS_COLORS = { pending:'status-pending', accepted:'status-accepted', preparing:'status-preparing', ready:'status-ready', completed:'status-completed', cancelled:'status-cancelled' };
+
+function loadOrders() {
+  const filter = document.getElementById('status-filter')?.value || '';
+  const url = myOutletId
+    ? `/api/admin/orders/outlet/${myOutletId}${filter ? '?status=' + filter : ''}`
+    : `/api/order${filter ? '?status=' + filter : ''}`;
+
+  fetch(url, { headers: { 'Authorization': `Bearer ${token}` } })
+    .then(r=>r.json())
+    .then(data => {
+      const orders = data.data || data.orders || data || [];
+      const table = document.getElementById('orders-table');
+      if (orders.length === 0) {
+        table.innerHTML = '<div class="text-center py-12 text-secondary text-sm"><span class="material-symbols-outlined text-3xl text-primary/20 block mb-2">receipt_long</span>No orders found</div>';
+        return;
+      }
+      table.innerHTML = orders.map(o => {
+        const date = new Date(o.createdAt).toLocaleDateString('en-IN', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+        const next = STATUS_NEXT[o.status];
+        return `<div class="bg-white rounded-2xl p-4 border border-outline-variant/10 flex flex-col md:flex-row md:items-center gap-3">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="font-bold text-sm text-on-surface">#${o._id.slice(-8).toUpperCase()}</span>
+              <span class="text-xs ${STATUS_COLORS[o.status]||''} px-2 py-0.5 rounded-full font-bold">${o.status}</span>
+            </div>
+            <p class="text-secondary text-xs mt-0.5">${date} · ${(o.items||[]).length} item(s) · <span class="text-primary font-bold">₹${o.totalAmount||0}</span></p>
+            <p class="text-secondary text-xs truncate">${(o.items||[]).map(i=>i.name||'Item').join(', ')}</p>
+          </div>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            ${next ? `<button onclick="updateStatus('${o._id}','${next}')" class="bg-primary text-on-primary px-4 py-2 rounded-xl text-xs font-bold hover:bg-primary/90 transition-colors">${STATUS_LABELS[o.status]}</button>` : ''}
+            ${o.status === 'pending' ? `<button onclick="updateStatus('${o._id}','cancelled')" class="border border-error/40 text-error px-4 py-2 rounded-xl text-xs font-bold hover:bg-error-container/20 transition-colors">Cancel</button>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+    });
+}
+
+async function updateStatus(orderId, status) {
+  const res = await fetch('/api/admin/orders/status', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify({ orderId, status })
+  });
+  const data = await res.json();
+  if (data.success) { showToast('Order updated!', 'success'); loadOrders(); }
+  else showToast(data.message || 'Update failed', 'error');
+}
+
+// ── Menu ───────────────────────────────────────────────────────
+function loadMenu() {
+  if (!myOutletId) return;
+  fetch(`/api/menu/outlet/${myOutletId}`, { headers: { 'Authorization': `Bearer ${token}` } })
+    .then(r=>r.json())
+    .then(data => {
+      const items = data.data || data.menu || data || [];
+      const grid = document.getElementById('menu-grid-admin');
+      if (items.length === 0) {
+        grid.innerHTML = '<div class="col-span-full text-center py-12 text-secondary text-sm"><span class="material-symbols-outlined text-3xl text-primary/20 block mb-2">restaurant_menu</span>No menu items yet</div>';
+        return;
+      }
+      grid.innerHTML = items.map(item => `<div class="bg-white rounded-2xl overflow-hidden border border-outline-variant/10 hover:shadow-md transition-shadow">
+        <div class="relative h-40 bg-primary/5">
+          ${item.image ? `<img src="${item.image}" class="w-full h-full object-cover"/>` : `<div class="w-full h-full flex items-center justify-center"><span class="material-symbols-outlined text-5xl text-primary/20">lunch_dining</span></div>`}
+          <span class="absolute top-3 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full ${item.available ? 'bg-green-100 text-green-700' : 'bg-error-container text-error'}">
+            ${item.available ? 'Available' : 'Unavailable'}
+          </span>
+        </div>
+        <div class="p-4">
+          <div class="flex justify-between items-start">
+            <h4 class="font-bold text-sm text-on-surface">${item.name}</h4>
+            <span class="font-bold text-primary text-sm">₹${item.price}</span>
+          </div>
+          ${item.description ? `<p class="text-secondary text-xs mt-1 line-clamp-1">${item.description}</p>` : ''}
+          <div class="flex gap-2 mt-3">
+            <button onclick="toggleAvailability('${item._id}', ${!item.available})"
+              class="flex-1 py-2 rounded-lg text-xs font-bold border border-outline-variant/30 hover:bg-surface-container-low transition-colors">
+              ${item.available ? 'Disable' : 'Enable'}
+            </button>
+            <button onclick="deleteItem('${item._id}')"
+              class="w-9 h-9 rounded-lg flex items-center justify-center border border-error/30 text-error hover:bg-error-container/20 transition-colors flex-shrink-0">
+              <span class="material-symbols-outlined text-base">delete</span>
+            </button>
+          </div>
+        </div>
+      </div>`).join('');
+    });
+}
+
+function showAddItemModal() { document.getElementById('add-item-modal').classList.remove('hidden'); }
+function closeModal() { document.getElementById('add-item-modal').classList.add('hidden'); }
+
+async function submitAddItem(e) {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const body = { name: fd.get('name'), price: +fd.get('price'), description: fd.get('description'), available: fd.get('available') === 'on', outlet: myOutletId };
+  const res = await fetch('/api/admin/menu', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  if (data.success) { showToast('Item added!', 'success'); closeModal(); loadMenu(); }
+  else showToast(data.message || 'Failed', 'error');
+}
+
+async function toggleAvailability(id, available) {
+  const res = await fetch(`/api/admin/menu/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify({ available })
+  });
+  const data = await res.json();
+  if (data.success) { showToast('Updated!', 'success'); loadMenu(); }
+  else showToast('Failed', 'error');
+}
+
+async function deleteItem(id) {
+  if (!confirm('Delete this item?')) return;
+  const res = await fetch(`/api/admin/menu/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+  const data = await res.json();
+  if (data.success) { showToast('Deleted!', 'success'); loadMenu(); }
+  else showToast('Failed', 'error');
+}
+
+// ── Settings ───────────────────────────────────────────────────
+function loadSettings() {
+  if (!myOutletId) return;
+  fetch(`/api/outlets/${myOutletId}`).then(r=>r.json()).then(data => {
+    const o = data.data || data.outlet || data;
+    document.getElementById('settings-loading').classList.add('hidden');
+    document.getElementById('settings-form').classList.remove('hidden');
+    document.getElementById('setting-name').value = o.name || '';
+    document.getElementById('setting-desc').value = o.description || '';
+    document.getElementById('setting-timing').value = o.timing || '';
+  });
+}
+
+async function saveSettings(e) {
+  e.preventDefault();
+  showToast('Settings saved (endpoint integration needed)', 'info');
+}
+</script>
+
+<%- include('../partials/footer') %>
