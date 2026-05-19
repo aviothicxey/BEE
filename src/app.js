@@ -85,26 +85,66 @@ app.post('/auth/login', async (req, res) => {
 });
 
 app.post('/auth/signup', async (req, res) => {
-  const { name, email, password, confirmPassword } = req.body;
+
+  const {
+    name,
+    email,
+    phone,
+    password,
+    confirmPassword
+  } = req.body;
+
   if (password !== confirmPassword) {
-    return res.render('pages/signup', { user: null, error: 'Passwords do not match', formData: { name, email } });
-  }
-  try {
-    const response = await fetch(`http://localhost:${process.env.PORT || 5000}/api/auth/signup`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password })
+    return res.render('pages/signup', {
+      user: null,
+      error: 'Passwords do not match',
+      formData: { name, email, phone }
     });
+  }
+
+  try {
+
+    const response = await fetch(
+      `http://localhost:${process.env.PORT || 5000}/api/auth/signup`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          phone,
+          password
+        })
+      }
+    );
+
     const data = await response.json();
+
     if (data.success) {
       return res.redirect('/login?registered=1');
     }
-    return res.render('pages/signup', { user: null, error: data.message || 'Signup failed', formData: { name, email } });
-  } catch {
-    return res.render('pages/signup', { user: null, error: 'Server error. Please try again.', formData: { name, email } });
-  }
-});
 
+    return res.render('pages/signup', {
+      user: null,
+      error: data.message || 'Signup failed',
+      formData: { name, email, phone }
+    });
+
+  } catch (err) {
+
+    console.log(err);
+
+    return res.render('pages/signup', {
+      user: null,
+      error: 'Server error. Please try again.',
+      formData: { name, email, phone }
+    });
+
+  }
+
+});
 // ── Page routes ─────────────────────────────────────────────────
 app.get('/', async (req, res) => {
   const user = await getUserFull(req);
@@ -132,11 +172,17 @@ app.get('/outlets', async (req, res) => {
 app.get('/outlet/:id', async (req, res) => {
   const user = await getUserFull(req);
   try {
-    const response = await fetch(`http://localhost:${process.env.PORT || 5000}/api/outlets/${req.params.id}`);
-    const data = await response.json();
-    const outlet = data.data || data.outlet || data || null;
+    const Outlet = require('./models/outlet.model');
+    const outlet = await Outlet.findById(req.params.id).lean();
+    if (!outlet) {
+      console.error('Outlet not found for id:', req.params.id);
+      return res.render('pages/outlet', { user, outlet: null });
+    }
+    // Convert ObjectId to string explicitly
+    outlet._id = outlet._id.toString();
     res.render('pages/outlet', { user, outlet });
-  } catch {
+  } catch (err) {
+    console.error('Outlet page error:', err);
     res.render('pages/outlet', { user, outlet: null });
   }
 });

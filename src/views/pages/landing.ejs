@@ -244,7 +244,7 @@
 
 <script>
 // Load popular outlets via API
-fetch('/api/outlets/popular?limit=4')
+fetch('/api/outlets/popular?limit=4', { credentials: 'include' })
   .then(r => r.json())
   .then(data => {
     const outlets = data.data || [];

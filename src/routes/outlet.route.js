@@ -7,10 +7,12 @@ const { createOutletSchema, outletParamsSchema } = require('../validators/outlet
 
 const outletRouter = express.Router();
 
-// Protected routes - all require JWT authentication
+// PUBLIC routes - no auth needed
+outletRouter.get('/popular', getPopularOutlets);
+outletRouter.get('/all', getOutlets);
+outletRouter.get('/:id', validateParams(outletParamsSchema), getOutletById);
+
+// Protected routes
 outletRouter.post('/create', authenticateToken, requireRole(['admin', 'superadmin']), validateBody(createOutletSchema), createOutlet);
-outletRouter.get('/popular', authenticateToken, getPopularOutlets);
-outletRouter.get('/all', authenticateToken, getOutlets);
-outletRouter.get('/:id', authenticateToken, validateParams(outletParamsSchema), getOutletById);
 
 module.exports = outletRouter;

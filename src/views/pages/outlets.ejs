@@ -109,7 +109,7 @@ function outletCard(o) {
   </a>`;
 }
 
-fetch('/api/outlets/all')
+fetch('/api/outlets/all', { credentials: 'include' })
   .then(r => r.json())
   .then(data => {
     const all = data.data || data.outlets || data || [];

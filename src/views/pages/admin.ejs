@@ -177,7 +177,7 @@ fetch('/api/auth/me', { headers: { 'Authorization': `Bearer ${token}` } })
     loadOrders();
     // Menu count
     if (myOutletId) {
-      fetch(`/api/menu/outlet/${myOutletId}`).then(r=>r.json()).then(d => {
+      fetch(`/api/menu/outlet/${myOutletId}`, { credentials: 'include' }).then(r=>r.json()).then(d => {
         document.getElementById('stat-menu').textContent = (d.data||d.menu||d||[]).length;
       });
     }
@@ -314,7 +314,7 @@ async function deleteItem(id) {
 // ── Settings ───────────────────────────────────────────────────
 function loadSettings() {
   if (!myOutletId) return;
-  fetch(`/api/outlets/${myOutletId}`).then(r=>r.json()).then(data => {
+  fetch(`/api/outlets/${myOutletId}`, { credentials: 'include' }).then(r=>r.json()).then(data => {
     const o = data.data || data.outlet || data;
     document.getElementById('settings-loading').classList.add('hidden');
     document.getElementById('settings-form').classList.remove('hidden');

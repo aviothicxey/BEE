@@ -4,9 +4,9 @@ const { requireRole } = require('../middlewares/role.middleware');
 const router = express.Router();
 
 const sampleOutlets = [
-  { id: '1', name: 'Campus Grill', description: 'Quick burgers and fries', status: 'Open', timing: '10-15 min' },
-  { id: '2', name: 'Pizza Corner', description: 'Fresh slices on demand', status: 'Open', timing: '12-18 min' },
-  { id: '3', name: 'Cafe Brew', description: 'Coffee, shakes and snacks', status: 'Closed', timing: '20-25 min' },
+  { _id: '1', name: 'Campus Grill', description: 'Quick burgers and fries', status: 'Open', timing: '10-15 min' },
+  { _id: '2', name: 'Pizza Corner', description: 'Fresh slices on demand', status: 'Open', timing: '12-18 min' },
+  { _id: '3', name: 'Cafe Brew', description: 'Coffee, shakes and snacks', status: 'Closed', timing: '20-25 min' },
 ];
 
 // ===== PUBLIC ROUTES (no JWT required) =====
@@ -32,7 +32,7 @@ router.get('/outlets', authenticateToken, requireRole(['student']), (req, res) =
 });
 
 router.get('/outlet/:id', authenticateToken, requireRole(['student']), (req, res) => {
-  const outlet = sampleOutlets.find(o => o.id === req.params.id) || sampleOutlets[0];
+  const outlet = sampleOutlets.find(o => o._id === req.params.id) || sampleOutlets[0];
   res.render('outlet', { title: `${outlet.name} | CampusBites`, outlet, user: req.user });
 });
 
